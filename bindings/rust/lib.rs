@@ -41,11 +41,8 @@ pub fn parse(text: &str, default_data_type: DataType, old_tree: Option<&Tree>) -
                     keywords::tokens::INSTRUCTION => {
                         let operation = statement.child_by_field_name("operation").unwrap().utf8_text(file_bytes).unwrap().parse::<OperationType>().unwrap();
 
-                        match operation {
-                            OperationType::In => {
-                                inputs.push(parse_expression(file_bytes, &default_data_type, &statement.child_by_field_name("operand").unwrap()))
-                            },
-                            _ => {}, 
+                        if operation == OperationType::In {
+                            inputs.push(parse_expression(file_bytes, &default_data_type, &statement.child_by_field_name("operand").unwrap()))
                         }
                    
                         instructions.push(Instruction { 
