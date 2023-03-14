@@ -1,9 +1,12 @@
 pub mod data;
 pub mod utilities;
 
+#[cfg(feature = "detailed_parsing")]
+pub mod detailed;
+
 use std::collections::HashMap;
 use data::instructions::types::OperationType;
-use tree_sitter::{Language, Node, Tree};
+use tree_sitter::{Language, Node};
 use crate::data::context::{BeanieParsingContext, ExpressionSignature, FuncSignature};
 use crate::data::expression::data_type::DataType;
 use crate::data::expression::instruction_expression::InstructionExpression;
@@ -15,10 +18,10 @@ extern "C" { fn tree_sitter_beanie() -> Language; }
 fn language() -> Language { unsafe { tree_sitter_beanie() } }
 // pub const NODE_TYPES: &'static str = include_str!("../../src/node-types.json");
 
-pub fn parse(text: &str, default_data_type: DataType, old_tree: Option<&Tree>) -> Result<BeanieParsingContext, ParsingError> {
+pub fn parse(text: &str, default_data_type: DataType) -> Result<BeanieParsingContext, ParsingError> {
     let mut parser = tree_sitter::Parser::new();
     parser.set_language(language()).map_err(|_| ParsingError::LoadLang)?;
-    let tree = parser.parse(text, old_tree);
+    let tree = parser.parse(text, None);
 
     match tree {
         None => Err(ParsingError::CreateTree), 
@@ -77,7 +80,6 @@ pub fn parse(text: &str, default_data_type: DataType, old_tree: Option<&Tree>) -
             }
             
             Ok(BeanieParsingContext {
-                abstract_syntax_tree: tree.clone(),
                 constants,
                 functions,
                 inputs,
@@ -106,17 +108,5 @@ fn parse_instruction_expression(file_bytes: &[u8], default_data_type: &DataType,
         keywords::tokens::BOOLEAN => Ok(InstructionExpression::Boolean(evaluation_node.utf8_text(file_bytes).unwrap().parse::<bool>().unwrap())),
         keywords::tokens::STRING => Ok(InstructionExpression::String(evaluation_node.utf8_text(file_bytes).unwrap().trim_matches('\"').to_string())),
         _ => Err(ParsingError::NotValidInstructionExpression(evaluation_node.kind().to_string())), 
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fs;
-    use crate::data::expression::data_type::DataType;
-
-    #[test]
-    fn can_parse() {
-        let context = super::parse(&fs::read_to_string("examples/test.bn").unwrap(), DataType::Decimal, None).unwrap();
-        println!("{:#?}", context);
     }
 }

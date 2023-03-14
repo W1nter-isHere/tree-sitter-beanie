@@ -15,6 +15,9 @@ include = [
 [lib]
 path = "bindings/rust/lib.rs"
 
+[features]
+detailed_parsing = []
+
 [dependencies]
 lazy_static = "1.4.0"
 maplit = "1.0.2"
